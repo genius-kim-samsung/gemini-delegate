@@ -14,9 +14,15 @@ dst = Path.home() / ".claude" / "skills" / "gemini-delegate"
 
 has_agy = shutil.which("agy") or (
     Path(os.environ.get("LOCALAPPDATA", "")) / "agy" / "bin" / "agy.exe").exists()
-if not shutil.which("gemini") and not has_agy:
-    print("경고: 워커 CLI(gemini 또는 agy)가 없습니다. "
-          "사내망은 Gemini CLI, 사외망은 agy를 설치·로그인하세요 (README 참고).", file=sys.stderr)
+dev_agy = os.environ.get("GEMINI_DELEGATE_DEV_AGY", "").strip().lower() in (
+    "1", "true", "yes", "on")
+
+if not shutil.which("gemini"):
+    print("경고: 정식 워커인 Gemini CLI가 없습니다. 사내망에서 설치·로그인하세요 (README 참고).",
+          file=sys.stderr)
+if dev_agy and not has_agy:
+    print("경고: 개발 모드(GEMINI_DELEGATE_DEV_AGY=1)인데 agy가 없습니다. "
+          "사외망 테스트용 agy를 설치·로그인하세요 (README 참고).", file=sys.stderr)
 
 dst.parent.mkdir(parents=True, exist_ok=True)
 shutil.copytree(src, dst, dirs_exist_ok=True)
