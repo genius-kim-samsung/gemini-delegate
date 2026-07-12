@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """gemini-delegate 스킬을 ~/.claude/skills/에 설치한다. 재실행하면 덮어쓴다."""
 
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -11,8 +12,11 @@ for stream in (sys.stdout, sys.stderr):
 src = Path(__file__).parent / "skills" / "gemini-delegate"
 dst = Path.home() / ".claude" / "skills" / "gemini-delegate"
 
-if not shutil.which("gemini"):
-    print("경고: gemini CLI가 PATH에 없습니다. 먼저 Gemini CLI를 설치·로그인하세요.", file=sys.stderr)
+has_agy = shutil.which("agy") or (
+    Path(os.environ.get("LOCALAPPDATA", "")) / "agy" / "bin" / "agy.exe").exists()
+if not shutil.which("gemini") and not has_agy:
+    print("경고: 워커 CLI(gemini 또는 agy)가 없습니다. "
+          "사내망은 Gemini CLI, 사외망은 agy를 설치·로그인하세요 (README 참고).", file=sys.stderr)
 
 dst.parent.mkdir(parents=True, exist_ok=True)
 shutil.copytree(src, dst, dirs_exist_ok=True)

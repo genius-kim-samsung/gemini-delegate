@@ -70,8 +70,8 @@ python "<skill-dir>/delegate.py" --type write --spec-file spec.md
 - 결과는 stdout으로 반환된다. 위임은 blocking이다.
 - 기본 타임아웃 600초, `--timeout`으로 조정. 모델은 `--model`로 오버라이드.
 - 모든 위임은 `~/.claude/gemini-delegate/ledger.jsonl`에 자동 기록된다.
-- 워커 백엔드: 기본은 gemini(사내 엔터프라이즈). 개인 환경(사외망)에서는
-  `--backend agy`(Antigravity CLI, Gemini CLI 개인용 후속)를 사용하라.
+- 워커 백엔드는 자동 감지된다 — PATH에 gemini(사내 엔터프라이즈)가 있으면 gemini,
+  없으면 agy(Antigravity CLI, Gemini CLI 개인용 후속). 강제하려면 `--backend gemini|agy`.
   gemini 호출이 인증 오류(IneligibleTierError 등)로 실패하면 `--backend agy`로 1회
   전환 시도 후, 그래도 실패하면 회수하라.
 
@@ -79,7 +79,8 @@ python "<skill-dir>/delegate.py" --type write --spec-file spec.md
 
 - **읽기 위임**: 이후 작업의 전제가 되는 하중 큰 주장을 골라, 인용된 `경로:줄번호`를
   직접 읽어 스팟체크하라. 근거 인용이 없는 주장은 검증 불가로 취급하고 사용하지 마라.
-- **쓰기 위임**: `git diff`를 반드시 검토하라. 검토 전에는 완료로 취급하지 마라.
+- **쓰기 위임**: `git diff`를 반드시 검토하라 (git 저장소가 아니면 워커가 보고한
+  수정 파일을 직접 읽어 확인하라). 검토 전에는 완료로 취급하지 마라.
 
 ## 5. 실패 처리 — 출구 규칙
 
