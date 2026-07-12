@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+# skills CLI 소비자 락파일 — repo 폴더에서 `npx skills add` 테스트 시 생김
+skills-lock.json
