@@ -101,8 +101,10 @@ def build_command(exe, args, full_spec):
     """
     if args.backend == "gemini":
         mode = {"read": "plan", "write": "auto_edit"}[args.type]
+        # --output-format json: stdout이 {response, stats, ...} 구조가 되어
+        # auto 라우터가 실제로 쓴 수행 모델을 stats.models 키에서 회수할 수 있다.
         cmd = [exe, "-p", "stdin으로 전달된 위임 지시를 수행하라.",
-               "--approval-mode", mode, "--skip-trust"]
+               "--approval-mode", mode, "--skip-trust", "--output-format", "json"]
         if args.model:
             cmd += ["-m", args.model]
         return cmd, full_spec
@@ -112,6 +114,26 @@ def build_command(exe, args, full_spec):
     if args.model:
         cmd += ["--model", args.model]
     return cmd, None
+
+
+def parse_gemini_output(stdout):
+    """gemini --output-format json 출력에서 (표시할 답, 수행 모델 리스트)를 뽑는다.
+
+    파싱이 깨지면 (원문 그대로, None)을 돌려 출력을 절대 잃지 않는다 — 모델 보고는
+    부가정보이고 위임의 본체인 답이 우선이다.
+    """
+    try:
+        data = json.loads(stdout)
+    except (ValueError, TypeError):
+        return stdout, None
+    if not isinstance(data, dict):
+        return stdout, None
+    models_stats = data.get("stats", {}).get("models") or {}
+    used = [name for name, m in models_stats.items()
+            if isinstance(m, dict) and m.get("api", {}).get("totalRequests", 0) > 0]
+    used = used or list(models_stats) or None
+    answer = data.get("response")
+    return (answer if answer is not None else stdout), used
 
 
 def append_ledger(row):
@@ -170,24 +192,37 @@ def main():
         if _text(e.stderr).strip():
             stderr += "\n--- 워커 stderr (부분) ---\n" + _text(e.stderr)
 
+    # 수행 모델 추출 + 출력 언랩. gemini만 구조화 출력(-o json)을 내므로 거기서만 뽑고,
+    # agy는 구조화 출력이 없어 '미지원'으로 둔다 (ADR 0003).
+    if args.backend == "gemini":
+        display, models = parse_gemini_output(stdout)
+        effective_model = models or ["unknown"]
+        model_note = ", ".join(models) if models else "불명 (JSON 파싱 실패)"
+    else:
+        display = stdout
+        effective_model = ["unsupported"]
+        model_note = "미지원 (agy)"
+
     duration = round(time.monotonic() - start, 1)
     append_ledger({
         "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "backend": args.backend,
         "type": args.type,
-        "model": args.model or "default",
+        "model": effective_model,
         "spec_summary": re.sub(r"\s+", " ", spec)[:120],
         "result": result,
         "duration_s": duration,
-        "output_chars": len(stdout),
+        "output_chars": len(display),
         "retry": args.retry,
     })
 
-    if stdout:
-        print(stdout, end="")
+    if display:
+        print(display, end="")
+    # 수행 모델 대면 보고 — 오케스트레이터가 이 줄을 사용자에게 함께 전달한다.
+    print(f"\n[delegate] 수행 모델: {model_note}", file=sys.stderr)
     if result != "ok":
         tail = "\n".join(stderr.strip().splitlines()[-15:])
-        print(f"\n[delegate] 위임 {result} (rc={rc}, {duration}s)\n{tail}", file=sys.stderr)
+        print(f"[delegate] 위임 {result} (rc={rc}, {duration}s)\n{tail}", file=sys.stderr)
     sys.exit(rc)
 
 

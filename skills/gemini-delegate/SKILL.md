@@ -69,7 +69,11 @@ python "<skill-dir>/delegate.py" --type write --spec-file spec.md
 
 - 결과는 stdout으로 반환된다. 위임은 blocking이다.
 - 기본 타임아웃 600초, `--timeout`으로 조정. 모델은 `--model`로 오버라이드.
-- 모든 위임은 `~/.claude/gemini-delegate/ledger.jsonl`에 자동 기록된다.
+- gemini 위임은 실제 **수행 모델**(auto 라우터가 고른 결과)을 stderr에
+  `[delegate] 수행 모델: …`로 보고한다. **이 줄을 사용자에게 함께 전달하라**
+  (사용자가 어떤 작업이 pro/flash 중 무엇으로 돌았는지 인지하도록). agy는 구조화 출력이
+  없어 '미지원'으로 표기된다.
+- 모든 위임은 `~/.claude/gemini-delegate/ledger.jsonl`에 자동 기록된다 (`model` 필드 = 수행 모델).
 
 ## 4. 결과 검증 — 생략 불가
 
