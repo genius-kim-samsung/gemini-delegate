@@ -44,9 +44,13 @@ _Avoid_: 로그(일반 디버그 로그와 혼동 주의)
 _Avoid_: 요청 모델, 기본 모델
 
 **능동 발동 (Proactive Invocation)**:
-오케스트레이터가 명시 지시 없이 대량 탐색·보일러플레이트 같은 위임 적합 작업을 시작하기 직전에 스스로 위임 적합성을 검토하는 것. 스킬 description은 호출 판정 시점에만 참조되어 이 자기중단을 강제하지 못하므로, 호스트 메모리 파일(CLAUDE.md/AGENTS.md)의 텍스트 넛지로 보강한다(setup 스킬이 배포 — `docs/adr/0004`). 신뢰도는 측정 불가한 best-effort다.
-_Avoid_: 자동 트리거, 라우팅
+오케스트레이터가 명시 지시 없이 대량 탐색·보일러플레이트 같은 위임 적합 작업을 시작하기 직전에 스스로 위임 적합성을 검토하는 것. 스킬 description은 호출 판정 시점에만 참조되어 이 자기중단을 강제하지 못하므로, 호스트 메모리 파일(CLAUDE.md/AGENTS.md)에 넣는 자동 트리거로 보강한다(setup 스킬이 배포 — `docs/adr/0004`). 신뢰도는 측정 불가한 best-effort다.
+_Avoid_: 라우팅
+
+**자동 트리거 (Auto-trigger)**:
+능동 발동을 보강하려고 호스트 메모리 파일(CLAUDE.md/AGENTS.md)에 넣는 텍스트 블록. 마커(`<!-- gemini-delegate:begin/end -->`)로 구분되며 setup 스킬이 넣고/뺀다. 이름과 달리 결정론적 자동 발동이 아니라 매 턴 컨텍스트에 로드되는 best-effort 리마인드다.
+_Avoid_: 넛지
 
 **반응 발동 (Reactive Invocation)**:
-사용자가 `/delegate`·"위임"·"Gemini에게 시켜" 등으로 명시 요청해 스킬이 발동하는 것. 스킬 description의 트리거 문구로 충분히 담보된다.
+사용자가 `/gemini-delegate`·"위임"·"Gemini에게 시켜" 등으로 명시 요청해 스킬이 발동하는 것. 스킬 description의 트리거 문구로 충분히 담보된다.
 _Avoid_: 수동 호출
