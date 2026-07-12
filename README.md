@@ -48,6 +48,10 @@ npx skills@latest add genius-kim-samsung/gemini-delegate --skill '*' -g -y
 `--skill '*'`는 두 스킬을 모두, `-g`는 전역(모든 프로젝트에서 발동), `-y`는 확인 프롬프트를
 건너뛴다. 감지된 코딩 에이전트(Claude Code·Codex 등)의 전역 스킬 디렉터리에 설치된다.
 
+특정 버전에 고정하려면 소스 뒤에 태그를 붙인다 — `...gemini-delegate#v0.1.0 --skill '*' -g -y`.
+붙이지 않으면 최신 `main`을 받는다. 설치한 스킬 갱신은 `npx skills update`. 버전 목록과 변경
+이력은 [`CHANGELOG.md`](CHANGELOG.md) 및 git 태그(`v*`)를 본다.
+
 **2. 자동 트리거 설정**: 에이전트에서 `/setup-gemini-delegate` 를 실행한다.
 이 스킬이 AI 서비스를 감지해(Claude Code→`CLAUDE.md`, Codex→`AGENTS.md`) "작업 전 위임을
 먼저 검토하라"는 자동 트리거를 전역 메모리 파일에 마커 블록으로 넣는다. **스킬 파일을 복사하는 것만으로는

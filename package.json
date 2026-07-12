@@ -1,0 +1,19 @@
+{
+  "name": "gemini-delegate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "고성능 CLI(Claude Code/Codex)의 월별 토큰 한도를 아끼기 위한 위임 하네스",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/genius-kim-samsung/gemini-delegate"
+  },
+  "scripts": {
+    "changeset": "changeset",
+    "version": "changeset version"
+  },
+  "devDependencies": {
+    "@changesets/changelog-git": "^0.2.1",
+    "@changesets/cli": "^2.30.0"
+  },
+  "packageManager": "npm@11.6.2"
+}
