@@ -6,22 +6,25 @@ Claude Code/Codex의 월별 토큰 한도를 아끼기 위한 위임 하네스. 
 배경·설계는 `README.md`, 용어(ubiquitous language)는 `CONTEXT.md`, 설계 결정은
 `docs/adr/`를 읽어라. 아래는 **이 저장소 코드를 고칠 때** 필요한 것만 적는다.
 
-## 두 갈래 산출물 — 헷갈리지 말 것
+## 세 갈래 산출물 — 헷갈리지 말 것
 
-- **스킬 지시문** `skills/gemini-delegate/SKILL.md` — 오케스트레이터가 읽는 위임 판정·검증 규칙.
+- **위임 스킬 지시문** `skills/gemini-delegate/SKILL.md` — 오케스트레이터가 읽는 위임 판정·검증 규칙.
 - **하네스 코드** `skills/gemini-delegate/delegate.py` — 권한 강제·계약 첨부·장부 기록 스크립트(호스트 무관).
+- **설치 마무리 스킬** `skills/setup-gemini-delegate/SKILL.md` — 능동 위임 넛지를 호스트 메모리 파일(CLAUDE.md/AGENTS.md)에 마커 블록으로 넣고/빼는 스킬. 에이전트가 실행하며 호스트를 감지한다(배경 `docs/adr/0004`).
 
 ## Commands
 
 | Command | Description |
 |---|---|
-| `python install.py` | 스킬을 `~/.claude/skills/gemini-delegate/`로 복사(덮어쓰기). |
+| `python install.py` | 두 스킬을 `~/.claude/skills/`로 복사(오프라인 안전망). 온라인은 `npx skills add`. |
+| `/setup-gemini-delegate` (에이전트에서) | 능동 넛지를 호스트 메모리 파일에 넣음/제거(호스트 감지). |
 | `python skills/gemini-delegate/delegate.py --dry-run --type read "spec"` | 실행 없이 최종 명령·spec만 확인. |
 | dev 테스트 | `GEMINI_DELEGATE_DEV_AGY=1` 설정 후 `delegate.py`를 실행하면 agy 백엔드로 실제 위임(사외망). |
 
 ## Gotchas
 
-- **repo ≠ 설치본**: 편집은 repo에서, 실행은 `~/.claude/skills/`의 복사본에서 한다. `install.py`를 다시 돌리기 전엔 `SKILL.md`·`delegate.py` 변경이 먹지 않는다.
+- **repo ≠ 설치본**: 편집은 repo에서, 실행은 `~/.claude/skills/`(또는 `~/.codex/skills/`)의 복사본에서 한다. `install.py`를 다시 돌리거나 `npx skills add` 하기 전엔 스킬 변경이 먹지 않는다.
+- **능동 넛지는 setup 스킬 단독 소유**: CLAUDE.md/AGENTS.md 마커 블록을 넣고 빼는 로직은 `setup-gemini-delegate` 스킬에만 있다. install.py는 스킬 복사만 한다(넛지 로직을 Python에 중복 두지 마라). 배포 경계는 `docs/adr/0004`.
 - **정식 백엔드는 gemini 하나** — 자동 감지·폴백 없음. agy는 `GEMINI_DELEGATE_DEV_AGY=1`이 켜진 사외망 개발 머신 전용 탈출구다(스위치 꺼지면 `--backend agy`는 하드 에러). 이 경계를 무너뜨리기 전에 `docs/adr/0002` 읽을 것.
 - **용어를 지켜라**: 오케스트레이터/워커/위임/회수/수행 모델은 `CONTEXT.md`가 못박은 용어다. `_Avoid_` 목록의 단어(라우터·폴백·롤백 등)로 바꾸지 마라.
 - **delegate.py는 호스트 무관**: Claude Code 전용 기능에 의존하지 마라 — Codex에서도 AGENTS.md로 그대로 쓴다.

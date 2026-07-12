@@ -42,3 +42,11 @@ _Avoid_: 로그(일반 디버그 로그와 혼동 주의)
 **수행 모델 (Effective Model)**:
 워커가 위임을 **실제로 처리한** 모델(들). 요청 모델(`--model` 오버라이드)과 구별된다 — 요청을 안 하면 gemini의 auto 라우터가 스스로 고르므로, 무엇이 실제로 돌았는지는 결과를 봐야 안다. 한 위임이 여러 모델을 거칠 수 있어(pro로 시작해 쿼터에 걸려 flash로 폴백) 리스트로 다룬다. gemini는 `--output-format json`의 `stats.models` 키로 확인되어 장부와 대면 한 줄로 보고된다. agy는 구조화 출력이 없어 '미지원', 파싱이 깨지면 '불명'.
 _Avoid_: 요청 모델, 기본 모델
+
+**능동 발동 (Proactive Invocation)**:
+오케스트레이터가 명시 지시 없이 대량 탐색·보일러플레이트 같은 위임 적합 작업을 시작하기 직전에 스스로 위임 적합성을 검토하는 것. 스킬 description은 호출 판정 시점에만 참조되어 이 자기중단을 강제하지 못하므로, 호스트 메모리 파일(CLAUDE.md/AGENTS.md)의 텍스트 넛지로 보강한다(setup 스킬이 배포 — `docs/adr/0004`). 신뢰도는 측정 불가한 best-effort다.
+_Avoid_: 자동 트리거, 라우팅
+
+**반응 발동 (Reactive Invocation)**:
+사용자가 `/delegate`·"위임"·"Gemini에게 시켜" 등으로 명시 요청해 스킬이 발동하는 것. 스킬 description의 트리거 문구로 충분히 담보된다.
+_Avoid_: 수동 호출
