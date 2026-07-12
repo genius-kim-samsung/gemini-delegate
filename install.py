@@ -2,7 +2,7 @@
 """gemini-delegate 스킬들을 ~/.claude/skills/에 복사한다. 재실행하면 덮어쓴다.
 
 이 설치기는 스킬 파일 복사만 하는 오프라인·사내망 안전망이다. 온라인에서는
-`npx skills add <owner>/gemini-delegate`로도 설치할 수 있다. 어느 경로로 설치했든,
+`npx skills add genius-kim-samsung/gemini-delegate`로도 설치할 수 있다. 어느 경로로 설치했든,
 능동 위임 넛지를 호스트 메모리 파일(CLAUDE.md/AGENTS.md)에 넣으려면 설치 후
 에이전트에서 /setup-gemini-delegate 스킬을 실행하라 (배경: docs/adr/0004)."""
 
