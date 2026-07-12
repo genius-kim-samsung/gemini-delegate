@@ -11,7 +11,7 @@ description: >-
 # gemini-delegate 설치 마무리 (setup-gemini-delegate)
 
 이 스킬은 **위임 하네스가 아니다.** gemini-delegate 스킬 파일을 복사하는 것
-(`npx skills add` 또는 `install.py`)은 파일만 놓을 뿐, 오케스트레이터가 대량 작업 전
+(`npx skills add`)은 파일만 놓을 뿐, 오케스트레이터가 대량 작업 전
 **스스로** 위임을 검토하게 만드는 **능동 발동** 나사를 조이지 않는다. 그 나사가 호스트
 메모리 파일에 들어가는 한 줄 자동 트리거다. 이 스킬이 그 자동 트리거를 넣고/뺀다.
 
