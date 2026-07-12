@@ -59,6 +59,16 @@ skills/gemini-delegate/
 `delegate.py`는 호스트 무관 스크립트라 Codex CLI에서도 AGENTS.md에 사용법을 적어주면
 그대로 쓸 수 있다 (읽기: `--type read`, 쓰기: `--type write`).
 
+### 워커 백엔드
+
+| 백엔드 | 대상 환경 | 권한 강제 플래그 |
+|---|---|---|
+| `gemini` (기본) | 사내 엔터프라이즈 Gemini CLI | `--approval-mode plan` / `auto_edit` |
+| `agy` | 개인 환경(사외망). Gemini CLI 개인용 서비스는 2026-06-18 종료되어 Antigravity CLI로 대체됨 | `--mode plan` / `accept-edits` |
+
+`--backend agy`로 전환한다. agy 설치: `irm https://antigravity.google/cli/install.ps1 | iex`
+(Windows PowerShell), 최초 1회 `agy` 실행 후 Google 로그인 필요.
+
 ## 튜닝
 
 운영하면서 위임이 자주 회수되는 작업 유형이 보이면 `SKILL.md`의 카탈로그/네거티브

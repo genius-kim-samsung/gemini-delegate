@@ -70,6 +70,10 @@ python "<skill-dir>/delegate.py" --type write --spec-file spec.md
 - 결과는 stdout으로 반환된다. 위임은 blocking이다.
 - 기본 타임아웃 600초, `--timeout`으로 조정. 모델은 `--model`로 오버라이드.
 - 모든 위임은 `~/.claude/gemini-delegate/ledger.jsonl`에 자동 기록된다.
+- 워커 백엔드: 기본은 gemini(사내 엔터프라이즈). 개인 환경(사외망)에서는
+  `--backend agy`(Antigravity CLI, Gemini CLI 개인용 후속)를 사용하라.
+  gemini 호출이 인증 오류(IneligibleTierError 등)로 실패하면 `--backend agy`로 1회
+  전환 시도 후, 그래도 실패하면 회수하라.
 
 ## 4. 결과 검증 — 생략 불가
 
