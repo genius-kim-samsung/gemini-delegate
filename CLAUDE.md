@@ -28,6 +28,6 @@ Claude Code/Codex의 월별 토큰 한도를 아끼기 위한 위임 하네스. 
 - **정식 백엔드는 gemini 하나** — 자동 감지·폴백 없음. agy는 `GEMINI_DELEGATE_DEV_AGY=1`이 켜진 사외망 개발 머신 전용 탈출구다(스위치 꺼지면 `--backend agy`는 하드 에러). 이 경계를 무너뜨리기 전에 `docs/adr/0002` 읽을 것.
 - **용어를 지켜라**: 오케스트레이터/워커/위임/회수/수행 모델은 `CONTEXT.md`가 못박은 용어다. `_Avoid_` 목록의 단어(라우터·폴백·롤백 등)로 바꾸지 마라.
 - **delegate.py는 호스트 무관**: Claude Code 전용 기능에 의존하지 마라 — Codex에서도 AGENTS.md로 그대로 쓴다.
-- **auto 라우팅은 의도된 현행**: read 위임을 flash로 고정하지 마라. 수행 모델을 관측 중이며 전환은 데이터로 정당화한다(`docs/adr/0003`).
+- **read 위임 기본은 flash 고정(`DEFAULT_READ_MODEL`), write는 auto 유지**: 저판단 read 위임에 pro 쿼터가 새는 걸 막으려 read 기본 모델을 `gemini-3.5-flash`로 고정했다(전환 근거·배경 `docs/adr/0003`). write 위임은 여전히 auto 라우터에 맡기고 수행 모델을 장부로 관측한다. `--model`이 오면 우선하며, 모델 id가 바뀌면 상수 한 곳만 갱신하라.
 - **버전 관리는 루트 Node 툴링(유지보수 전용)**: `package.json`·`.changeset/`는 루트에만 있고 스킬 폴더엔 없어 설치 CLI가 소비자에게 복사하지 않는다. 설치 도구는 버전 *문자열*을 안 읽고, 소비자 핀 손잡이는 **git 태그**뿐(`owner/repo#v0.1.0`). semver는 계약 기준(major=CLI·스킬명·검증 계약 파괴). 배경 `docs/adr/0005`. 레포=단일 비공개 패키지.
 - 테스트 스위트 없음. `--dry-run`으로 명령을 확인하고, 사외망에선 agy로 실제 왕복해 검증한다. agy는 spec을 명령줄 인자로 받아 ~30,000자 한계(`AGY_SPEC_LIMIT`)가 있다.

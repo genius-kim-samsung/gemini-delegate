@@ -32,6 +32,11 @@ LEDGER_PATH = Path.home() / ".claude" / "gemini-delegate" / "ledger.jsonl"
 # agy는 spec을 명령줄 인자로 받으므로 Windows 명령줄 한계(약 32,700자)에 걸린다.
 AGY_SPEC_LIMIT = 30000
 
+# read 위임의 기본 수행 모델(gemini 백엔드 전용). auto 라우터가 저판단 read 위임까지
+# pro로 라우팅해 귀한 pro 쿼터가 새는 것을 막으려 flash로 고정한다(배경·전환 근거
+# docs/adr/0003). --model 오버라이드가 오면 그쪽이 우선. 모델 id는 변동하니 갱신은 여기 한 곳.
+DEFAULT_READ_MODEL = "gemini-3.5-flash"
+
 # 위임 유형 → spec에 첨부하는 위임 계약
 CONTRACTS = {
     "read": (
@@ -105,8 +110,10 @@ def build_command(exe, args, full_spec):
         # auto 라우터가 실제로 쓴 수행 모델을 stats.models 키에서 회수할 수 있다.
         cmd = [exe, "-p", "stdin으로 전달된 위임 지시를 수행하라.",
                "--approval-mode", mode, "--skip-trust", "--output-format", "json"]
-        if args.model:
-            cmd += ["-m", args.model]
+        # read는 flash로 고정(ADR 0003), write는 auto 유지. --model이 오면 언제나 우선.
+        model = args.model or (DEFAULT_READ_MODEL if args.type == "read" else None)
+        if model:
+            cmd += ["-m", model]
         return cmd, full_spec
     # agy는 stdin 프롬프트를 지원하지 않아 spec을 -p 인자로 직접 전달한다.
     mode = {"read": "plan", "write": "accept-edits"}[args.type]
@@ -152,7 +159,7 @@ def main():
                         default="agy" if dev_mode() else "gemini",
                         help="워커 CLI (기본: gemini, GEMINI_DELEGATE_DEV_AGY=1이면 agy). "
                              "agy는 사외망 개발 전용이라 그 스위치가 켜져야만 유효.")
-    parser.add_argument("--model", help="워커 모델 오버라이드 (기본: CLI 기본 모델)")
+    parser.add_argument("--model", help="워커 모델 오버라이드 (미지정 시 gemini read는 flash 고정, 그 외 CLI 기본)")
     parser.add_argument("--timeout", type=int, default=600, help="초 단위 타임아웃 (기본: 600)")
     parser.add_argument("--retry", action="store_true", help="재시도 위임임을 장부에 표시")
     parser.add_argument("--dry-run", action="store_true", help="실행 없이 명령과 최종 spec만 출력")
