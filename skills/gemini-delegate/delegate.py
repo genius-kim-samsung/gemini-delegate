@@ -24,7 +24,7 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 LEDGER_PATH = Path.home() / ".claude" / "gemini-delegate" / "ledger.jsonl"
@@ -212,7 +212,7 @@ def main():
 
     duration = round(time.monotonic() - start, 1)
     append_ledger({
-        "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "ts": datetime.now().astimezone().isoformat(timespec="seconds"),
         "backend": args.backend,
         "type": args.type,
         "model": effective_model,
