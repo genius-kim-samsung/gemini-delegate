@@ -49,14 +49,22 @@ npx skills@latest add genius-kim-samsung/gemini-delegate --skill '*' -g -y
 건너뛴다. 감지된 코딩 에이전트(Claude Code·Codex 등)의 전역 스킬 디렉터리에 설치된다.
 
 특정 버전에 고정하려면 소스 뒤에 태그를 붙인다 — `...gemini-delegate#v0.1.0 --skill '*' -g -y`.
-붙이지 않으면 최신 `main`을 받는다. 설치한 스킬 갱신은 `npx skills update`. 버전 목록과 변경
-이력은 [`CHANGELOG.md`](CHANGELOG.md) 및 git 태그(`v*`)를 본다.
+붙이지 않으면 최신 `main`을 받는다. 설치한 스킬 갱신은 `npx skills update` — **갱신 후에는
+`/setup-gemini-delegate`를 다시 실행하라**(아래 2단계가 놓는 파일들은 복사본이라 자동으로
+따라오지 않는다). 버전 목록과 변경 이력은 [`CHANGELOG.md`](CHANGELOG.md) 및 git 태그(`v*`)를 본다.
 
-**2. 자동 트리거 설정**: 에이전트에서 `/setup-gemini-delegate` 를 실행한다.
-이 스킬이 AI 서비스를 감지해(Claude Code→`CLAUDE.md`, Codex→`AGENTS.md`) "작업 전 위임을
-먼저 검토하라"는 자동 트리거를 전역 메모리 파일에 마커 블록으로 넣는다. **스킬 파일을 복사하는 것만으로는
-능동적인 발동이 켜지지 않는다.** 이 한 줄이 긴 세션에서도 위임을 잊지 않게 한다(배경: `docs/adr/0004`).
-`/gemini-delegate` 또는 "Gemini에게 시켜"로 명시 요청(반응 발동)은 이 자동 트리거 없이도 동작한다.
+**2. 설치 마무리**: 에이전트에서 `/setup-gemini-delegate` 를 실행한다. **스킬 파일을 복사하는
+것만으로는 능동적인 발동이 켜지지 않는다.** 이 스킬이 AI 서비스를 감지해 스킬 배포 채널이
+건드리지 않는 두 자리를 채운다.
+
+- **자동 트리거** — "작업 전 위임을 먼저 검토하라"는 한 줄을 전역 메모리 파일
+  (Claude Code→`CLAUDE.md`, Codex→`AGENTS.md`)에 마커 블록으로 넣는다. 긴 세션에서도 위임을
+  잊지 않게 한다(배경: `docs/adr/0004`).
+- **탐색 위임 래퍼** — 탐색을 직접 하지 못하게 강제하는 `Explore` 서브에이전트를
+  `~/.claude/agents/`에 놓는다. **Claude Code 전용**이며(Codex엔 대응 개념이 없어 건너뛴다),
+  이미 같은 이름의 파일이 있으면 덮어쓰지 않고 물어본다(배경: `docs/adr/0007`).
+
+`/gemini-delegate` 또는 "Gemini에게 시켜"로 명시 요청(반응 발동)은 이 2단계 없이도 동작한다.
 
 요구사항: Python 3.8+(위임 하네스 delegate.py 실행), **Gemini CLI**(사내 엔터프라이즈 워커, 설치·로그인).
 gemini에 접근할 수 없는 사외망 개발/테스트 환경이라면 대신 agy를 쓸 수 있다.
@@ -65,9 +73,10 @@ gemini에 접근할 수 없는 사외망 개발/테스트 환경이라면 대신
 ## 삭제
 
 에이전트에서 `/setup-gemini-delegate` 를 remove 모드로 실행한다(예: "gemini-delegate 제거").
-AI 서비스를 감지해 메모리 파일의 자동 트리거 블록과 두 스킬 디렉터리를 함께 지운다. npx로 깔았다면
-`npx skills remove gemini-delegate` 로 스킬 파일만 지울 수도 있으나, 그건 자동 트리거 블록을 남긴다.
-블록은 마커(`<!-- gemini-delegate:begin/end -->`)로 찾아 지운다.
+AI 서비스를 감지해 메모리 파일의 자동 트리거 블록, 탐색 위임 래퍼, 두 스킬 디렉터리를 함께 지운다.
+npx로 깔았다면 `npx skills remove gemini-delegate` 로 스킬 파일만 지울 수도 있으나, 그건 앞의 둘을
+남긴다. 우리가 놓은 것은 마커(`<!-- gemini-delegate:begin/end -->`,
+`<!-- gemini-delegate:managed -->`)로 찾아 지우며, 마커 없는 파일은 손대지 않는다.
 
 ## 구성
 
@@ -77,7 +86,9 @@ skills/
 │   ├── SKILL.md      # 위임 판정 기준·spec 템플릿·검증/회수 규칙 (오케스트레이터가 읽음)
 │   └── delegate.py   # 공용 코어: approval-mode 강제, 위임 계약 첨부, 타임아웃, 장부 기록
 └── setup-gemini-delegate/
-    └── SKILL.md      # 자동 트리거 문구를 AI 서비스 메모리 파일(CLAUDE.md/AGENTS.md)에 넣고/빼는 스킬
+    ├── SKILL.md      # 자동 트리거 문구와 탐색 위임 래퍼를 넣고/빼는 스킬
+    └── templates/
+        └── Explore.md  # 탐색 위임 래퍼 정본 (Claude Code 서브에이전트, 설치 시 경로 치환)
 ```
 
 `delegate.py`는 특정 AI 서비스에 종속되지 않은 스크립트라 Codex CLI에서도 AGENTS.md에 사용법을 적어주면

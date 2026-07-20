@@ -6,3 +6,6 @@ node_modules/
 
 # skills CLI 소비자 락파일 — repo 폴더에서 `npx skills add` 테스트 시 생김
 skills-lock.json
+
+# 탐색 위임 래퍼 정본은 skills/setup-gemini-delegate/templates/ 하나뿐 — 프로젝트 사본 금지
+.claude/agents/
