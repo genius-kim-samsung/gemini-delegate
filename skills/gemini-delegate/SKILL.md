@@ -85,11 +85,13 @@ python "<skill-dir>/delegate.py" --type write --spec-file spec.md
 
 - 결과는 stdout으로 반환된다. 위임은 blocking이다.
 - 기본 타임아웃 600초, `--timeout`으로 조정. 모델은 `--model`로 오버라이드.
-- gemini 위임은 실제 **수행 모델**(auto 라우터가 고른 결과)을 stderr에
-  `[delegate] 수행 모델: …`로 보고한다. **이 줄을 사용자에게 함께 전달하라**
-  (사용자가 어떤 작업이 pro/flash 중 무엇으로 돌았는지 인지하도록). agy는 구조화 출력이
+- gemini 위임은 실제 **수행 모델**(auto 라우터가 고른 결과)과 워커가 쓴 토큰을 stderr에
+  `[delegate] 수행 모델: … , 워커 토큰 N`으로 보고한다. **이 줄을 사용자에게 함께 전달하라**
+  (사용자가 어떤 작업이 pro/flash 중 무엇으로 얼마에 돌았는지 인지하도록). agy는 구조화 출력이
   없어 '미지원'으로 표기된다.
-- 모든 위임은 `~/.claude/gemini-delegate/ledger.jsonl`에 자동 기록된다 (`model` 필드 = 수행 모델).
+- 모든 위임은 `~/.claude/gemini-delegate/ledger.jsonl`에 자동 기록된다 —
+  `model`(수행 모델), `tokens`(워커가 쓴 입력/출력/합, gemini 전용),
+  `spec_chars`(네가 쓴 spec 분량 = 위임의 고정비 대리지표), `output_chars`(회수한 분량).
 
 ## 4. 결과 검증 — 생략 불가
 
@@ -97,6 +99,10 @@ python "<skill-dir>/delegate.py" --type write --spec-file spec.md
   직접 읽어 스팟체크하라. 근거 인용이 없는 주장은 검증 불가로 취급하고 사용하지 마라.
 - **쓰기 위임**: `git diff`를 반드시 검토하라 (git 저장소가 아니면 워커가 보고한
   수정 파일을 직접 읽어 확인하라). 검토 전에는 완료로 취급하지 마라.
+  이 검토는 **diff가 곧 워커의 산출물일 때만** 성립한다 — 위임 전에 `git status --porcelain`으로
+  워킹트리가 깨끗한지 확인하라. 네 미커밋 변경이 섞여 있으면 diff에서 둘을 구분할 수 없어
+  검증이 조용히 무의미해진다. 정리할 수 없는 상황이면 위임 전 변경 파일 목록을 먼저 확보해
+  검토 때 분리하라.
 
 ## 5. 실패 처리 — 출구 규칙
 
@@ -106,6 +112,9 @@ python "<skill-dir>/delegate.py" --type write --spec-file spec.md
 - **워커 불능** (쿼터 소진·타임아웃·실행 오류): 재시도 없이 즉시 회수하고,
   사용자에게 한 줄로 고지하라 (예: "Gemini 쿼터 소진으로 직접 수행합니다").
   `--reclaim worker "spec 요약"`으로 장부에 남겨라.
+  **쓰기 위임이었다면 회수 전에 잔여물부터 확인하라** — 워커는 도중에 죽어도 이미 고친
+  파일을 되돌려 주지 않는다. `git status`로 부분 수정을 확인해 되돌릴지 이어받을지
+  정한 뒤에 직접 수행으로 넘어가라.
 
 회수 기록은 완화된 판정 기준(속성 2·3)이 실제로 어디서 실패하는지 배우는 근거다 —
 재위임률(`retry` 필드)과 함께 위임 기준 튜닝에 쓰인다.

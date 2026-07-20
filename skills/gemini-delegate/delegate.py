@@ -123,24 +123,45 @@ def build_command(exe, args, full_spec):
     return cmd, None
 
 
-def parse_gemini_output(stdout):
-    """gemini --output-format json 출력에서 (표시할 답, 수행 모델 리스트)를 뽑는다.
+def sum_tokens(models_stats):
+    """모델별 토큰을 합산한다. 없으면 None.
 
-    파싱이 깨지면 (원문 그대로, None)을 돌려 출력을 절대 잃지 않는다 — 모델 보고는
-    부가정보이고 위임의 본체인 답이 우선이다.
+    gemini 스키마 매핑: prompt=입력(캐시 적중분 포함), candidates=출력, total=합.
+    gemini의 `tokens.input`은 `prompt - cached`라 이름이 오해를 부르므로 쓰지 않는다.
+    """
+    fields = {"input": "prompt", "output": "candidates", "total": "total"}
+    out = {k: 0 for k in fields}
+    found = False
+    for m in models_stats.values():
+        tokens = m.get("tokens") if isinstance(m, dict) else None
+        if not isinstance(tokens, dict):
+            continue
+        found = True
+        for ours, theirs in fields.items():
+            v = tokens.get(theirs)
+            if isinstance(v, (int, float)):
+                out[ours] += int(v)
+    return out if found else None
+
+
+def parse_gemini_output(stdout):
+    """gemini --output-format json 출력에서 (표시할 답, 수행 모델 리스트, 토큰 합계)를 뽑는다.
+
+    파싱이 깨지면 (원문 그대로, None, None)을 돌려 출력을 절대 잃지 않는다 — 모델·토큰
+    보고는 부가정보이고 위임의 본체인 답이 우선이다.
     """
     try:
         data = json.loads(stdout)
     except (ValueError, TypeError):
-        return stdout, None
+        return stdout, None, None
     if not isinstance(data, dict):
-        return stdout, None
+        return stdout, None, None
     models_stats = data.get("stats", {}).get("models") or {}
     used = [name for name, m in models_stats.items()
             if isinstance(m, dict) and m.get("api", {}).get("totalRequests", 0) > 0]
     used = used or list(models_stats) or None
     answer = data.get("response")
-    return (answer if answer is not None else stdout), used
+    return (answer if answer is not None else stdout), used, sum_tokens(models_stats)
 
 
 def append_ledger(row):
@@ -180,9 +201,11 @@ def main():
             "type": args.type,
             "model": [],
             "spec_summary": re.sub(r"\s+", " ", spec)[:120],
+            "spec_chars": len(spec),
             "result": f"reclaimed-{args.reclaim}",
             "duration_s": 0,
             "output_chars": 0,
+            "tokens": None,
             "retry": args.retry,
         })
         return
@@ -221,13 +244,14 @@ def main():
     # 수행 모델 추출 + 출력 언랩. gemini만 구조화 출력(-o json)을 내므로 거기서만 뽑고,
     # agy는 구조화 출력이 없어 '미지원'으로 둔다 (ADR 0003).
     if args.backend == "gemini":
-        display, models = parse_gemini_output(stdout)
+        display, models, tokens = parse_gemini_output(stdout)
         effective_model = models or ["unknown"]
         model_note = ", ".join(models) if models else "불명 (JSON 파싱 실패)"
     else:
         display = stdout
         effective_model = ["unsupported"]
         model_note = "미지원 (agy)"
+        tokens = None
 
     duration = round(time.monotonic() - start, 1)
     append_ledger({
@@ -236,16 +260,19 @@ def main():
         "type": args.type,
         "model": effective_model,
         "spec_summary": re.sub(r"\s+", " ", spec)[:120],
+        "spec_chars": len(spec),
         "result": result,
         "duration_s": duration,
         "output_chars": len(display),
+        "tokens": tokens,
         "retry": args.retry,
     })
 
     if display:
         print(display, end="")
-    # 수행 모델 대면 보고 — 오케스트레이터가 이 줄을 사용자에게 함께 전달한다.
-    print(f"\n[delegate] 수행 모델: {model_note}", file=sys.stderr)
+    # 수행 모델·토큰 대면 보고 — 오케스트레이터가 이 줄을 사용자에게 함께 전달한다.
+    token_note = f", 워커 토큰 {tokens['total']:,}" if tokens else ""
+    print(f"\n[delegate] 수행 모델: {model_note}{token_note}", file=sys.stderr)
     if result != "ok":
         tail = "\n".join(stderr.strip().splitlines()[-15:])
         print(f"[delegate] 위임 {result} (rc={rc}, {duration}s)\n{tail}", file=sys.stderr)
