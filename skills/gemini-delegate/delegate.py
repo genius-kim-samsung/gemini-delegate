@@ -3,7 +3,7 @@
 
 오케스트레이터(Claude Code/Codex)가 위임 적합한 하위 작업을 워커(Gemini CLI 또는
 Antigravity CLI)에 넘길 때 사용한다. 위임 유형에 따라 워커의 권한 모드를 기계적으로
-강제하고, 위임 계약(근거 인용 등)을 spec에 자동 첨부하며, 모든 위임을 장부에 기록한다.
+강제하고, 위임 계약(근거 인용 등)을 spec에 자동 첨부하며, 모든 위임과 회수를 장부에 기록한다.
 
 백엔드:
   gemini (기본)  — 사내 엔터프라이즈 Gemini CLI. 정식 경로.
@@ -162,11 +162,30 @@ def main():
     parser.add_argument("--model", help="워커 모델 오버라이드 (미지정 시 gemini read는 flash 고정, 그 외 CLI 기본)")
     parser.add_argument("--timeout", type=int, default=600, help="초 단위 타임아웃 (기본: 600)")
     parser.add_argument("--retry", action="store_true", help="재시도 위임임을 장부에 표시")
+    parser.add_argument("--reclaim", choices=("verify", "worker"),
+                        help="위임 실행 없이 회수를 장부에 기록 (verify=검증 재탈락, "
+                             "worker=워커 불능). spec 자리에 회수한 위임의 요약을 넘겨라.")
     parser.add_argument("--dry-run", action="store_true", help="실행 없이 명령과 최종 spec만 출력")
     args = parser.parse_args()
 
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8")
+
+    # 회수 기록은 워커 불능 상황에서도 동작해야 하므로 백엔드 해석(실행 파일 탐색) 전에 처리한다.
+    if args.reclaim:
+        spec = read_spec(args).rstrip()
+        append_ledger({
+            "ts": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "backend": args.backend,
+            "type": args.type,
+            "model": [],
+            "spec_summary": re.sub(r"\s+", " ", spec)[:120],
+            "result": f"reclaimed-{args.reclaim}",
+            "duration_s": 0,
+            "output_chars": 0,
+            "retry": args.retry,
+        })
+        return
 
     args.backend, exe = resolve_backend(args.backend)
     spec = read_spec(args).rstrip()
